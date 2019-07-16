@@ -39,7 +39,14 @@ import pickle
 # y = label[60000:90000]
 # X = train
 #
-# ensemble = pickle.load(open('saved_model', 'rb'))
+s=0
+set= pandas.read_csv('./PCs900_LosAlamos.csv', sep=',', chunksize=10)
+for i in set :
+    if s == 0 :
+        test_set = i
+        break
+
+ensemble = pickle.load(open('saved_model', 'rb'))
 
 app = Flask(__name__)
 
@@ -60,15 +67,18 @@ def predict(event_id):
     content = request.json
 
     # event = DataFrame([[content['Time'],content['SU'],content['DU'],content['SC'],content['DC'],content['AT'],content['LT'],content['AO'],content['SF']]], columns=['Time',	'SU',	'DU',	'SC',	'DC',	'AT',	'LT',	'AO','SF'])
-    # event = DataFrame.from_dict(content)
+    event = DataFrame.from_dict(content)
                                 # , orient='index')
     # event.reset_index(level=0, inplace=True)
 
-    # preds = ensemble.predict(event)
-
-    # print(preds)
-
-    return jsonify({"event_id":event_id, "result":'Normal'})
+    new_set = test_set.append(event , ignore_index=True)
+    print(new_set)
+    preds = ensemble.predict(new_set)
+    print(preds)
+    if preds[-1]==-1:
+        return jsonify({"event_id":event_id, "result":'Malicious'})
+    else:
+        return jsonify({"event_id":event_id, "result":'Normal'})
 
 def load_data():
     datas = pandas.read_csv('./PCs900_LosAlamos.csv', sep=',', chunksize=30000)
