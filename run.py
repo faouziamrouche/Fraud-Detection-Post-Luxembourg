@@ -40,7 +40,7 @@ import pickle
 # X = train
 #
 s=0
-set= pandas.read_csv('./PCs900_LosAlamos.csv', sep=',', chunksize=10)
+set= pandas.read_csv('./PCs900_LosAlamos.csv', sep=',', chunksize=2)
 for i in set :
     if s == 0 :
         test_set = i
@@ -61,8 +61,8 @@ def hello_name(number):
     return "Hello {}!".format(label[int(number)])
 
 
-@app.route('/api/test/<event_id>', methods=['GET', 'POST'])
-def predict(event_id):
+@app.route('/api/predict/event/<event_id>', methods=['GET', 'POST'])
+def predict_event(event_id):
     global ensemble
     content = request.json
 
@@ -79,6 +79,76 @@ def predict(event_id):
         return jsonify({"event_id":event_id, "result":'Malicious'})
     else:
         return jsonify({"event_id":event_id, "result":'Normal'})
+
+@app.route('/api/predict/events/', methods=['GET', 'POST'])
+def predict_events():
+    global ensemble
+    content = request.json
+
+    # event = DataFrame([[content['Time'],content['SU'],content['DU'],content['SC'],content['DC'],content['AT'],content['LT'],content['AO'],content['SF']]], columns=['Time',	'SU',	'DU',	'SC',	'DC',	'AT',	'LT',	'AO','SF'])
+
+    event = DataFrame.from_dict(content)
+                                # , orient='index')
+    # event.reset_index(level=0, inplace=True)
+
+    new_set = test_set.append(event , ignore_index=True)
+    # print(new_set)
+    preds = ensemble.predict(new_set)
+    preds = DataFrame(preds)
+    preds = preds.replace(1.0,'Normal')
+    preds = preds.replace(-1.0,'Malicious')
+    js = preds.to_json()
+    print(preds)
+    # return jsonify(preds)
+    return js
+
+@app.route('/api/train/new/', methods=['GET', 'POST'])
+def train_new():
+    global ensemble
+    content = request.json
+    label = content['labels']
+    event = content['events']
+    label_df = DataFrame([[1,label]],columns=['Index','Label'] )
+    # label_df = DataFrame.from_dict(label)
+    event_df = DataFrame.from_dict(event)
+
+    # print(event_df)
+    # print(label_df)
+    with open('events_new.csv', 'a') as f:
+        event_df.to_csv(f, header=False) # True if first event
+    with open('labels_new.csv', 'a') as f:
+        label_df.to_csv(f, header=False) # True if first event
+    # new_set = test_set.append(event , ignore_index=True)
+    # preds = ensemble.predict(new_set)
+    # preds = DataFrame(preds)
+    # preds = preds.replace(1.0,'Normal')
+    # preds = preds.replace(-1.0,'Malicious')
+    # js = preds.to_json()
+    # print(preds)
+    return "OK"
+
+@app.route('/api/train/all/', methods=['GET', 'POST'])
+def train_all():
+    global ensemble
+    content = request.json
+
+    # event = DataFrame([[content['Time'],content['SU'],content['DU'],content['SC'],content['DC'],content['AT'],content['LT'],content['AO'],content['SF']]], columns=['Time',	'SU',	'DU',	'SC',	'DC',	'AT',	'LT',	'AO','SF'])
+
+    event = DataFrame.from_dict(content)
+                                # , orient='index')
+    # event.reset_index(level=0, inplace=True)
+
+    new_set = test_set.append(event , ignore_index=True)
+    # print(new_set)
+    preds = ensemble.predict(new_set)
+    preds = DataFrame(preds)
+    preds = preds.replace(1.0,'Normal')
+    preds = preds.replace(-1.0,'Malicious')
+    js = preds.to_json()
+    print(preds)
+    # return jsonify(preds)
+    return js
+
 
 def load_data():
     datas = pandas.read_csv('./PCs900_LosAlamos.csv', sep=',', chunksize=30000)
