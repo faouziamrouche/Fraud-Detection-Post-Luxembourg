@@ -1,5 +1,5 @@
 import os
-from flask import Flask , request, jsonify
+from flask import Flask , request, jsonify, render_template
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import confusion_matrix
@@ -51,11 +51,14 @@ ensemble = pickle.load(open('saved_model', 'rb'))
 app = Flask(__name__)
 
 @app.route('/')
-def hello():
-    return "Hello World!"
+def render_hello():
+    return render_template('hello.html')
 
+@app.route('/test')
+def render_test():
+    return render_template('test.html')
 
-@app.route('/<number>')
+@app.route('/number/<number>')
 def hello_name(number):
     global label
     return "Hello {}!".format(label[int(number)])
