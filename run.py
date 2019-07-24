@@ -1,5 +1,5 @@
 import os
-from flask import Flask , request, jsonify, render_template
+from flask import Flask, request, jsonify, render_template, flash, redirect, url_for
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import confusion_matrix
@@ -15,6 +15,7 @@ from pandas import DataFrame
 import numpy as np
 import pandas
 import pickle
+import json
 
 # datas = pandas.read_csv('./PCs900_LosAlamos.csv', sep=',', chunksize=30000)
 # label = pandas.read_csv('./Labels.csv', sep=',')
@@ -39,6 +40,8 @@ import pickle
 # y = label[60000:90000]
 # X = train
 #
+from werkzeug.utils import secure_filename
+
 s=0
 set= pandas.read_csv('./PCs900_LosAlamos.csv', sep=',', chunksize=2)
 for i in set :
@@ -50,6 +53,30 @@ ensemble = pickle.load(open('saved_model', 'rb'))
 
 app = Flask(__name__)
 
+# def allowed_file(filename):
+#     return '.' in filename and \
+#            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/train1', methods=['GET', 'POST'])
+def upload_file():
+    if request.method == 'POST':
+        # check if the post request has the file part
+        if 'file' not in request.files:
+            flash('No file part')
+            return redirect(request.url)
+        file = request.files['file']
+        # if user does not select file, browser also
+        # submit an empty part without filename
+        if file.filename == '':
+            flash('No selected file')
+            return redirect(request.url)
+        if file :
+                # and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            file.save(os.path.join('./', filename))
+            return 'OK'
+    return 'OK'
+
 @app.route('/')
 def render_hello():
     return render_template('hello.html')
@@ -57,6 +84,10 @@ def render_hello():
 @app.route('/test')
 def render_test():
     return render_template('test.html')
+
+@app.route('/train')
+def render_train():
+    return render_template('train.html')
 
 @app.route('/number/<number>')
 def hello_name(number):
@@ -67,13 +98,17 @@ def hello_name(number):
 @app.route('/api/predict/event/<event_id>', methods=['GET', 'POST'])
 def predict_event(event_id):
     global ensemble
-    content = request.json
-
+    # content = request.json
+    # raw_req = request.form['event']
+    raw_req = request.files['file1']
+    print(raw_req)
+    req = json.loads(raw_req)
     # event = DataFrame([[content['Time'],content['SU'],content['DU'],content['SC'],content['DC'],content['AT'],content['LT'],content['AO'],content['SF']]], columns=['Time',	'SU',	'DU',	'SC',	'DC',	'AT',	'LT',	'AO','SF'])
-    event = DataFrame.from_dict(content)
-                                # , orient='index')
+    # event = DataFrame.from_dict(content)
+    event = DataFrame.from_dict(req)    # , orient='index')
     # event.reset_index(level=0, inplace=True)
-
+    # print('Value : '+req)
+    print(event)
     new_set = test_set.append(event , ignore_index=True)
     print(new_set)
     preds = ensemble.predict(new_set)

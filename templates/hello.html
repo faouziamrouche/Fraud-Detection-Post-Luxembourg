@@ -14,12 +14,28 @@
   height: auto;
 }
 
-.container .btn {
+.container .btn1 {
   position: absolute;
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  left: 20%;
+  transform: translate(-50%, 450%);
   -ms-transform: translate(-50%, -50%);
+  background-color: #f1f1f1;
+  color: black;
+  font-size: 16px;
+  padding: 16px 30px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.container .btn2 {
+  position: absolute;
+  top: 70%;
+  left: 20%;
+  transform: translate(-50%, 550%);
+  -ms-transform: translate(50%, 50%);
   background-color: #f1f1f1;
   color: black;
   font-size: 16px;
@@ -48,10 +64,16 @@ body  {
 
 
 <div class="container">
-    <img src="/static/logo.png" alt="Icon" style="width:128px;height:128px;">
+    <a href="/">
+        <img src="/static/logo.png" alt="Icon" style="width:128px;height:128px;">
+    </a>
+
 
 <form action="/test">
-  <button class="btn">Test</button>
+  <button class="btn1">Test</button>
+    <br><br>
+  <button class="btn2" formaction="/train">Train</button>
+
 </form>
 </div>
 
