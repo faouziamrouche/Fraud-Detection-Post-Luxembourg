@@ -127,7 +127,7 @@ body  {
     <a href="/">
         <img src="/static/logo.png" alt="Icon" style="width:128px;height:128px;">
     </a> <br><br><br><br><br>
-<h1>Hello ADMIN</h1>
+<h1>Test panel</h1>
   <fieldset>
     <legend>File:</legend>
 {#    <select id="combo1">#}
@@ -136,33 +136,34 @@ body  {
 {#    <option value="file 3">file 3</option>#}
 {#    <option value="file 4">file 4</option>#}
 {#    </select>#}
-<form action="/train1" id="form1" method="post" enctype=multipart/form-data> {#api/predict/event/24#}
+<form action="/api/predict/events/" id="form1" method="post" enctype=multipart/form-data> {#api/predict/event/24#}
 
-<input type="file" id="file" name="file" form="form1">
-    <br><br>
-<label class="switch">
-  <input type="checkbox" id="toggle1" onclick="enableTextArea2()" unchecked>
-  <span class="slider round"></span>
-</label>
+{#<input type="file" id="file" name="file" form="form1">#}
+{#    <br><br>#}
+{#<label class="switch">#}
+{#  <input type="checkbox" id="toggle1" onclick="enableTextArea2()" unchecked>#}
+{#  <span class="slider round"></span>#}
+{#</label>#}
 
 {#<label> Input event manually</label>#}
       <br><br>
 
 <label>
-    <textarea id="event" name="event" cols="50" rows="10" form="form1" disabled>Check toggle to introduce events manually</textarea>
+    <textarea id="event" name="event" cols="50" rows="10" form="form1">Paste events here</textarea>
+    <br><br>
     <br><input type="submit" value="Submit">
 </label>
 
 </form>
 
-    <br>
-
-      <label><input type="radio" name="option" value="1" checked> Launch testing</label>
-      <br><br>
-      <label><input type="radio" name="option" value="2"> Add training data</label>
-      <br><br>
-      <label><input type="radio" name="option" value="3"> Launch complete training</label>
-      <br><br>
+{#    <br>#}
+{##}
+{#      <label><input type="radio" name="option" value="1" checked> Launch testing</label>#}
+{#      <br><br>#}
+{#      <label><input type="radio" name="option" value="2"> Add training data</label>#}
+{#      <br><br>#}
+{#      <label><input type="radio" name="option" value="3"> Launch complete training</label>#}
+{#      <br><br>#}
   </fieldset>
 
 </body>
