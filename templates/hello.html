@@ -16,10 +16,11 @@
 
 .container .btn1 {
   position: absolute;
-  top: 50%;
-  left: 20%;
-  transform: translate(-50%, 450%);
-  -ms-transform: translate(-50%, -50%);
+  top: 300px;
+  left: 10%;
+      width: 150px;
+/*transform: translate(-50%, 450%);
+  -ms-transform: translate(-50%, -50%);*/
   background-color: #f1f1f1;
   color: black;
   font-size: 16px;
@@ -32,10 +33,44 @@
 
 .container .btn2 {
   position: absolute;
-  top: 70%;
-  left: 20%;
-  transform: translate(-50%, 550%);
-  -ms-transform: translate(50%, 50%);
+  top: 400px;
+  left: 10%;
+    width: 150px;
+  /*transform: translate(-50%, 550%);
+  -ms-transform: translate(50%, 50%);*/
+  background-color: #f1f1f1;
+  color: black;
+  font-size: 16px;
+  padding: 16px 30px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.container .btn3 {
+  position: absolute;
+  top: 500px;
+  left: 10%;
+    width: 150px;
+  /*transform: translate(-50%, 650%);
+  -ms-transform: translate(50%, 50%);*/
+  background-color: #f1f1f1;
+  color: black;
+  font-size: 16px;
+  padding: 16px 30px;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  text-align: center;
+}
+.container .btn4 {
+  position: absolute;
+  top: 600px;
+  left: 10%;
+    width: 150px;
+  /*transform: translate(-50%, 650%);
+  -ms-transform: translate(50%, 50%);*/
   background-color: #f1f1f1;
   color: black;
   font-size: 16px;
@@ -70,9 +105,13 @@ body  {
 
 
 <form action="/test">
-  <button class="btn1">Test</button>
+  <button class="btn1">Test multi-events</button>
     <br><br>
-  <button class="btn2" formaction="/train">Train</button>
+  <button class="btn2" formaction="/train/add">Add training data</button>
+    <br><br>
+  <button class="btn3" formaction="/train/launch">Launch training</button>
+    <br><br>
+  <button class="btn4" formaction="/train/download_model">Download model</button>
 
 </form>
 </div>
