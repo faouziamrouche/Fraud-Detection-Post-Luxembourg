@@ -110,14 +110,11 @@ body  {
 </style>
 
     <script type="text/javascript">
-  function enableTextArea1() {
-     var el = document.getElementById("radio1");
-     document.getElementById("myTextArea").disabled = !el.checked;
-  }
-  function enableTextArea2() {
+
+  function enableTextArea() {
      var el = document.getElementById("toggle1");
      document.getElementById("event").disabled = !el.checked;
-     document.getElementById("combo1").disabled = el.checked;
+     document.getElementById("file").disabled = el.checked;
 
   }
 </script>
@@ -129,7 +126,7 @@ body  {
     </a> <br><br><br><br><br>
 <h1>Test panel</h1>
   <fieldset>
-    <legend>File:</legend>
+{#    <legend>File:</legend>#}
 {#    <select id="combo1">#}
 {#    <option value="file 1">file 1</option>#}
 {#    <option value="file 2">file 2</option>#}
@@ -137,33 +134,25 @@ body  {
 {#    <option value="file 4">file 4</option>#}
 {#    </select>#}
 <form action="/api/predict/events/" id="form1" method="post" enctype=multipart/form-data> {#api/predict/event/24#}
+<br>
+<input type="file" id="file" name="file" form="form1">
+    <br><br>
+<label class="switch">
+  <input type="checkbox" id="toggle1" onclick="enableTextArea()" unchecked>
+  <span class="slider round"></span>
+</label>
 
-{#<input type="file" id="file" name="file" form="form1">#}
-{#    <br><br>#}
-{#<label class="switch">#}
-{#  <input type="checkbox" id="toggle1" onclick="enableTextArea2()" unchecked>#}
-{#  <span class="slider round"></span>#}
-{#</label>#}
-
-{#<label> Input event manually</label>#}
+<label> Input event manually</label>
       <br><br>
 
 <label>
-    <textarea id="event" name="event" cols="50" rows="10" form="form1">Paste events here</textarea>
-    <br><br>
+    <textarea id="event" name="event" cols="50" rows="10" form="form1" disabled>Paste events here</textarea>
+    <br>
     <br><input type="submit" value="Submit">
 </label>
 
 </form>
 
-{#    <br>#}
-{##}
-{#      <label><input type="radio" name="option" value="1" checked> Launch testing</label>#}
-{#      <br><br>#}
-{#      <label><input type="radio" name="option" value="2"> Add training data</label>#}
-{#      <br><br>#}
-{#      <label><input type="radio" name="option" value="3"> Launch complete training</label>#}
-{#      <br><br>#}
   </fieldset>
 
 </body>
