@@ -1,5 +1,5 @@
 import os
-from flask import Flask, request, jsonify, render_template, flash, redirect, url_for
+from flask import Flask, request, jsonify, render_template, flash, redirect, url_for, send_from_directory
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import confusion_matrix
@@ -16,6 +16,8 @@ import numpy as np
 import pandas
 import pickle
 import json
+from werkzeug.utils import secure_filename
+
 
 # datas = pandas.read_csv('./PCs900_LosAlamos.csv', sep=',', chunksize=30000)
 # label = pandas.read_csv('./Labels.csv', sep=',')
@@ -40,7 +42,14 @@ import json
 # y = label[60000:90000]
 # X = train
 #
-from werkzeug.utils import secure_filename
+
+UPLOAD_FOLDER = './uploads'
+
+app = Flask(__name__)
+app.secret_key = "secret key"
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024
+
 
 s=0
 set= pandas.read_csv('./PCs900_LosAlamos.csv', sep=',', chunksize=2)
@@ -50,8 +59,6 @@ for i in set :
         break
 
 ensemble = pickle.load(open('saved_model', 'rb'))
-
-app = Flask(__name__)
 
 # def allowed_file(filename):
 #     return '.' in filename and \
@@ -82,12 +89,20 @@ def render_hello():
     return render_template('hello.html')
 
 @app.route('/test')
-def render_test():
+def test_launch():
     return render_template('test.html')
 
-@app.route('/train')
-def render_train():
-    return render_template('train.html')
+@app.route('/train/add')
+def train_add():
+    return render_template('add training.html')
+
+@app.route('/train/launch')
+def train_launch():
+    return render_template('launch training.html')
+
+@app.route('/train/download_model')
+def train_download_model():
+    return send_from_directory('./','./saved_model')
 
 @app.route('/number/<number>')
 def hello_name(number):
@@ -121,26 +136,42 @@ def predict_event(event_id):
 @app.route('/api/predict/events/', methods=['GET', 'POST'])
 def predict_events():
     global ensemble
-    content = request.form['event']
-    # event = request.form['event']
+    if 'event' in request.form:
+        content = request.form['event']
+        print(request.form)
+        event = pandas.read_json(content)
+        new_set = test_set.append(event , ignore_index=True)
+        preds = ensemble.predict(new_set)
+        preds = DataFrame(preds)
+        preds = preds.replace(1.0,'Normal')
+        preds = preds.replace(-1.0,'Malicious')
+        preds = preds[2:]
+        preds = preds.reset_index(drop=True)
+        js = preds.to_json()
+        return js
+    else:
+        if 'file' not in request.files:
+            #flash('No file part')
+            return redirect('/')
+        else:
+            file = request.files['file']
+            file = file.read()
+            req = json.loads(file)
+            event = DataFrame.from_dict(req)  # , orient='index')
+            new_set = test_set.append(event, ignore_index=True)
+            preds = ensemble.predict(new_set)
+            preds = DataFrame(preds)
+            preds = preds.replace(1.0, 'Normal')
+            preds = preds.replace(-1.0, 'Malicious')
+            preds = preds[2:]
+            preds = preds.reset_index(drop=True)
+            # print(preds)
+            js = preds.to_json()
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+            #flash('File successfully uploaded')
+            return js
 
-    # event = DataFrame([[content['Time'],content['SU'],content['DU'],content['SC'],content['DC'],content['AT'],content['LT'],content['AO'],content['SF']]], columns=['Time',	'SU',	'DU',	'SC',	'DC',	'AT',	'LT',	'AO','SF'])
-    event = pandas.read_json(content)
-    # event = DataFrame.from_dict(content)
-                                # , orient='index')
-    new_set = test_set.append(event , ignore_index=True)
-    # print(new_set)
-    preds = ensemble.predict(new_set)
-    preds = DataFrame(preds)
-    preds = preds.replace(1.0,'Normal')
-    preds = preds.replace(-1.0,'Malicious')
-    # print(preds)
-    preds = preds[2:]
-    preds = preds.reset_index(drop=True)
-    # print(preds)
-    js = preds.to_json()
-    # return jsonify(preds)
-    return js
 
 @app.route('/api/train/new2/', methods=['GET', 'POST'])
 def train_new2():
@@ -149,42 +180,43 @@ def train_new2():
     label = content['labels']
     event = content['events']
     label_df = DataFrame([[1,label]],columns=['Index','Label'] )
-    # label_df = DataFrame.from_dict(label)
     event_df = DataFrame.from_dict(event)
 
-    # print(event_df)
-    # print(label_df)
     with open('events_new.csv', 'a') as f:
         event_df.to_csv(f, header=False) # True if first event
     with open('labels_new.csv', 'a') as f:
         label_df.to_csv(f, header=False) # True if first event
-    # new_set = test_set.append(event , ignore_index=True)
-    # preds = ensemble.predict(new_set)
-    # preds = DataFrame(preds)
-    # preds = preds.replace(1.0,'Normal')
-    # preds = preds.replace(-1.0,'Malicious')
-    # js = preds.to_json()
-    # print(preds)
+
     return "OK"
 
 @app.route('/api/train/new/', methods=['GET', 'POST'])
 def train_new():
     global ensemble
-    content_raw = request.form['json']
-    content = pandas.read_json(content_raw)
-    print(content)
-    event = content['events']
-    label = content['labels']
-    # label_df = DataFrame([[1,label]],columns=['Index','Label'] )
-    label_df = DataFrame.from_dict(label)
-    event_df = DataFrame.from_dict(event)
+    events_raw = request.form['events']
+    labels_raw = request.form['labels']
+    events = pandas.read_json(events_raw)
+    labels = pandas.read_json(labels_raw)
+    event_df = test_set.append(events , ignore_index=True)
+    event_df = event_df[2:]
+    event_df = event_df.reset_index(drop=True)
+    print(labels)
+    print(event_df)
 
-    # print(event_df)
-    # print(label_df)
+    #label = content['labels']
+
+    # label_df = DataFrame([[1,label]],columns=['Index','Label'] )
+    #label_df = DataFrame.from_dict(label)
+    #event_df = DataFrame.from_dict(event)
+    #event_df['index'] = event_df.index
+    #event_df = event_df.pivot_table(columns='index')
+    #event_df=event_df['events']
+    #print(event_df)
+    #event_df = event_df.reset_index(drop=True)
     with open('events_new.csv', 'a') as f:
-        event_df.to_csv(f, header=False) # True if first event
+        event_df.to_csv(f, header=True, index=False) # True if first event
+
     with open('labels_new.csv', 'a') as f:
-        label_df.to_csv(f, header=False) # True if first event
+        labels.to_csv(f, header=True, index=False) # True if first event
     # new_set = test_set.append(event , ignore_index=True)
     # preds = ensemble.predict(new_set)
     # preds = DataFrame(preds)
