@@ -64,26 +64,6 @@ ensemble = pickle.load(open('saved_model', 'rb'))
 #     return '.' in filename and \
 #            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/train1', methods=['GET', 'POST'])
-def upload_file():
-    if request.method == 'POST':
-        # check if the post request has the file part
-        if 'file' not in request.files:
-            flash('No file part')
-            return redirect(request.url)
-        file = request.files['file']
-        # if user does not select file, browser also
-        # submit an empty part without filename
-        if file.filename == '':
-            flash('No selected file')
-            return redirect(request.url)
-        if file :
-                # and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            file.save(os.path.join('./', filename))
-            return 'OK'
-    return 'OK'
-
 @app.route('/')
 def render_hello():
     return render_template('hello.html')
@@ -104,18 +84,12 @@ def train_launch():
 def train_download_model():
     return send_from_directory('./','./saved_model')
 
-@app.route('/number/<number>')
-def hello_name(number):
-    global label
-    return "Hello {}!".format(label[int(number)])
-
-
 @app.route('/api/predict/event/<event_id>', methods=['GET', 'POST'])
 def predict_event(event_id):
     global ensemble
-    # content = request.json
-    # raw_req = request.form['event']
-    raw_req = request.files['file1']
+    #content = request.json
+    raw_req = request.form['event']
+    #raw_req = request.files['file1']
     print(raw_req)
     req = json.loads(raw_req)
     # event = DataFrame([[content['Time'],content['SU'],content['DU'],content['SC'],content['DC'],content['AT'],content['LT'],content['AO'],content['SF']]], columns=['Time',	'SU',	'DU',	'SC',	'DC',	'AT',	'LT',	'AO','SF'])
@@ -133,45 +107,89 @@ def predict_event(event_id):
     else:
         return jsonify({"event_id":event_id, "result":'Normal'})
 
-@app.route('/api/predict/events/', methods=['GET', 'POST'])
+@app.route('/api/predict/events/', methods=['PUT','GET', 'POST'])
 def predict_events():
     global ensemble
-    if 'event' in request.form:
-        content = request.form['event']
-        print(request.form)
-        event = pandas.read_json(content)
-        new_set = test_set.append(event , ignore_index=True)
-        preds = ensemble.predict(new_set)
-        preds = DataFrame(preds)
-        preds = preds.replace(1.0,'Normal')
-        preds = preds.replace(-1.0,'Malicious')
-        preds = preds[2:]
-        preds = preds.reset_index(drop=True)
-        js = preds.to_json()
-        return js
-    else:
-        if 'file' not in request.files:
-            #flash('No file part')
-            return redirect('/')
-        else:
-            file = request.files['file']
-            file = file.read()
-            req = json.loads(file)
-            event = DataFrame.from_dict(req)  # , orient='index')
-            new_set = test_set.append(event, ignore_index=True)
+    if request.method == 'POST':
+        if 'event' in request.form:
+            content = request.form['event']
+            print(request.form)
+            event = pandas.read_json(content)
+            new_set = test_set.append(event , ignore_index=True)
             preds = ensemble.predict(new_set)
             preds = DataFrame(preds)
-            preds = preds.replace(1.0, 'Normal')
-            preds = preds.replace(-1.0, 'Malicious')
+            preds = preds.replace(1.0,'Normal')
+            preds = preds.replace(-1.0,'Malicious')
             preds = preds[2:]
             preds = preds.reset_index(drop=True)
-            # print(preds)
             js = preds.to_json()
-            filename = secure_filename(file.filename)
-            file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
-            #flash('File successfully uploaded')
             return js
+        else:
+            if 'file' not in request.files:
+                #flash('No file part')
+                return redirect('/')
+            else:
+                file1 = request.files['file']
+                file = file1.read()
+                req = json.loads(file)
+                event = DataFrame.from_dict(req)  # , orient='index')
+                new_set = test_set.append(event, ignore_index=True)
+                preds = ensemble.predict(new_set)
+                preds = DataFrame(preds)
+                preds = preds.replace(1.0, 'Normal')
+                preds = preds.replace(-1.0, 'Malicious')
+                preds = preds[2:]
+                preds = preds.reset_index(drop=True)
+                # print(preds)
+                js = preds.to_json()
+                filename = secure_filename(file1.filename)
+                file1.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                #flash('File successfully uploaded')
+                return js
+    else:
+        return jsonify(isError=False,
+                       message="Success",
+                       statusCode=200), 200
 
+@app.route('/api/train/new/', methods=['GET', 'POST'])
+def train_new():
+    global ensemble
+    if 'events' in request.form:
+        events_raw = request.form['events']
+        labels_raw = request.form['labels']
+        events = pandas.read_json(events_raw)
+        labels = pandas.read_json(labels_raw)
+        event_df = test_set.append(events , ignore_index=True)
+        event_df = event_df[2:]
+        event_df = event_df.reset_index(drop=True)
+        print(labels)
+        print(event_df)
+
+        #label = content['labels']
+
+        # label_df = DataFrame([[1,label]],columns=['Index','Label'] )
+        #label_df = DataFrame.from_dict(label)
+        #event_df = DataFrame.from_dict(event)
+        #event_df['index'] = event_df.index
+        #event_df = event_df.pivot_table(columns='index')
+        #event_df=event_df['events']
+        #print(event_df)
+        #event_df = event_df.reset_index(drop=True)
+        with open('events_new.csv', 'a') as f:
+            event_df.to_csv(f, header=True, index=False) # True if first event
+
+        with open('labels_new.csv', 'a') as f:
+            labels.to_csv(f, header=True, index=False) # True if first event
+        # new_set = test_set.append(event , ignore_index=True)
+        # preds = ensemble.predict(new_set)
+        # preds = DataFrame(preds)
+        # preds = preds.replace(1.0,'Normal')
+        # preds = preds.replace(-1.0,'Malicious')
+        # js = preds.to_json()
+        # print(preds)
+        return render_template("success.html")
+    else:
+        return render_template("success.html")
 
 @app.route('/api/train/new2/', methods=['GET', 'POST'])
 def train_new2():
@@ -188,43 +206,6 @@ def train_new2():
         label_df.to_csv(f, header=False) # True if first event
 
     return "OK"
-
-@app.route('/api/train/new/', methods=['GET', 'POST'])
-def train_new():
-    global ensemble
-    events_raw = request.form['events']
-    labels_raw = request.form['labels']
-    events = pandas.read_json(events_raw)
-    labels = pandas.read_json(labels_raw)
-    event_df = test_set.append(events , ignore_index=True)
-    event_df = event_df[2:]
-    event_df = event_df.reset_index(drop=True)
-    print(labels)
-    print(event_df)
-
-    #label = content['labels']
-
-    # label_df = DataFrame([[1,label]],columns=['Index','Label'] )
-    #label_df = DataFrame.from_dict(label)
-    #event_df = DataFrame.from_dict(event)
-    #event_df['index'] = event_df.index
-    #event_df = event_df.pivot_table(columns='index')
-    #event_df=event_df['events']
-    #print(event_df)
-    #event_df = event_df.reset_index(drop=True)
-    with open('events_new.csv', 'a') as f:
-        event_df.to_csv(f, header=True, index=False) # True if first event
-
-    with open('labels_new.csv', 'a') as f:
-        labels.to_csv(f, header=True, index=False) # True if first event
-    # new_set = test_set.append(event , ignore_index=True)
-    # preds = ensemble.predict(new_set)
-    # preds = DataFrame(preds)
-    # preds = preds.replace(1.0,'Normal')
-    # preds = preds.replace(-1.0,'Malicious')
-    # js = preds.to_json()
-    # print(preds)
-    return "Success"
 
 @app.route('/api/train/all/', methods=['GET', 'POST'])
 def train_all():
