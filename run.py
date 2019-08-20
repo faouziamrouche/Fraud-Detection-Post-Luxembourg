@@ -189,51 +189,54 @@ def train_new():
         # print(preds)
         return render_template("success.html")
     else:
-        return render_template("success.html")
+        if 'file1' not in request.files:
+            # flash('No file part')
+            return redirect('/')
+        else:
+            file1_pointer = request.files['file1']
+            file1 = file1_pointer.read()
+            file2_pointer = request.files['file2']
+            file2 = file2_pointer.read()
+            events = json.loads(file1)
+            labels = json.loads(file2)
+            events = DataFrame.from_dict(events)  # , orient='index')
+            labels = DataFrame.from_dict(labels)  # , orient='index')
+            event_df = test_set.append(events, ignore_index=True)
+            event_df = event_df[2:]
+            event_df = event_df.reset_index(drop=True)
+            print(labels)
+            print(event_df)
+            if os.path.exists('events_new.csv') and os.path.exists('labels_new.csv'):
+                with open('events_new.csv', 'a') as f:
+                    event_df.to_csv(f, header=False, index=False)  # True if first event
 
-@app.route('/api/train/new2/', methods=['GET', 'POST'])
-def train_new2():
-    global ensemble
-    content = request.json
-    label = content['labels']
-    event = content['events']
-    label_df = DataFrame([[1,label]],columns=['Index','Label'] )
-    event_df = DataFrame.from_dict(event)
+                with open('labels_new.csv', 'a') as f:
+                    labels.to_csv(f, header=False, index=False)  # True if first event
+            else:
+                with open('events_new.csv', 'w') as f:
+                    event_df.to_csv(f, header=True, index=False)  # True if first event
 
-    with open('events_new.csv', 'a') as f:
-        event_df.to_csv(f, header=False) # True if first event
-    with open('labels_new.csv', 'a') as f:
-        label_df.to_csv(f, header=False) # True if first event
+                with open('labels_new.csv', 'w') as f:
+                    labels.to_csv(f, header=True, index=False)  # True if first event
+            return render_template("success.html")
 
-    return "OK"
 
 @app.route('/api/train/all/', methods=['GET', 'POST'])
 def train_all():
     global ensemble
-    content = request.json
+    label, test, train = load_data()
+    y = label[60000:90000]
+    X = train
+    ensemble_new = train_model(ensemble,X,y)
+    save_model(ensemble_new,'./models/model_1')
+    return render_template('success.html')
 
-    # event = DataFrame([[content['Time'],content['SU'],content['DU'],content['SC'],content['DC'],content['AT'],content['LT'],content['AO'],content['SF']]], columns=['Time',	'SU',	'DU',	'SC',	'DC',	'AT',	'LT',	'AO','SF'])
-
-    event = DataFrame.from_dict(content)
-                                # , orient='index')
-    # event.reset_index(level=0, inplace=True)
-
-    new_set = test_set.append(event , ignore_index=True)
-    # print(new_set)
-    preds = ensemble.predict(new_set)
-    preds = DataFrame(preds)
-    preds = preds.replace(1.0,'Normal')
-    preds = preds.replace(-1.0,'Malicious')
-    js = preds.to_json()
-    print(preds)
-    # return jsonify(preds)
-    return js
 
 
 def load_data():
     datas = pandas.read_csv('./PCs900_LosAlamos.csv', sep=',', chunksize=30000)
     label = pandas.read_csv('./Labels.csv', sep=',')
-    events = pandas.read_csv('./Events.csv', sep=',')
+    #events = pandas.read_csv('./Events.csv', sep=',')
 
     label = label['Label']
     label = label.replace(['Normal'], 1)
@@ -251,7 +254,7 @@ def load_data():
             test = i
             break
 
-    return label, events, test, train
+    return label, test, train
 
 def train_model(ensemble, X, y) :
     seed = 2017
@@ -276,6 +279,8 @@ def train_model(ensemble, X, y) :
 
     # Fit ensemble
     ensemble.fit(X, y)
+
+    return ensemble
 
 def test_model(ensemble, test, label):
     # Predict
