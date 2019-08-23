@@ -273,7 +273,7 @@ def train_model(ensemble, X, y) :
 
 
     # Attach the final meta estimator
-    # ensemble.add_meta(LogisticRegression())
+    ensemble.add_meta(LogisticRegression())
 
     ensemble.add_meta(OCSVM())
 
@@ -282,31 +282,18 @@ def train_model(ensemble, X, y) :
 
     return ensemble
 
-def test_model(ensemble, test, label):
+
+def predict_event(ensemble, test, label):
     # Predict
     preds = ensemble.predict(test)
 
-    # score = accuracy_score(preds, label[120000:150000])
-    #
-    # predictions = DataFrame(preds)
+    score = accuracy_score(preds, label[120000:150000])
+
+    predictions = DataFrame(preds)
     # predictions[0].value_counts()
     # tn, fp, fn, tp = confusion_matrix(label[120000:150000],preds).ravel()
-    # tn, fp, fn, tp = confusion_matrix(label[120000:150000],predictions[0]).ravel()
-    # return preds, tn, fp, fn, tp
-    return preds
-
-def predict_event(ensemble, test):
-    # Predict
-    preds = ensemble.predict(test)
-
-    # score = accuracy_score(preds, label[120000:150000])
-    #
-    # predictions = DataFrame(preds)
-    # predictions[0].value_counts()
-    # tn, fp, fn, tp = confusion_matrix(label[120000:150000],preds).ravel()
-    # tn, fp, fn, tp = confusion_matrix(label[120000:150000],predictions[0]).ravel()
-    # return preds, tn, fp, fn, tp
-    return preds
+    tn, fp, fn, tp = confusion_matrix(label[120000:150000],predictions[0]).ravel()
+    return preds, tn, fp, fn, tp
 
 def save_model(ensemble, name='saved_model'):
     with open(name,'wb') as f:
